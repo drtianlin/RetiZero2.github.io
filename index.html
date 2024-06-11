@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetiZero2.0</title>
+    <style>
+        /* Your CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 50px;
+            position: relative;
+        }
+
+        #question-image-container {
+            margin-bottom: 20px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            background-color: white;
+            padding: 10px;
+        }
+
+        #question-image {
+            max-width: 400px;
+            height: 300px;
+            cursor: pointer;
+        }
+
+        #question-display {
+            margin-top: 350px;
+        }
+
+        #options-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .option {
+            flex: 0 0 calc(100% / 3 - 20px);
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .option.selected {
+            background-color: #f0f0f0;
+        }
+
+        #button-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            z-index: 1;
+        }
+
+        #button-container button {
+            margin: 0 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        #result-container {
+            text-align: center;
+            margin-top: 50px;
+            display: none;
+        }
+
+        /* Overlay styles */
+        #overlay {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #overlay img {
+            max-height: 80%;
+            max-width: 80%;
+            border: 5px solid white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Personal info form */
+        #personal-info-form {
+            display: block; /* Display the form initially */
+            margin-bottom: 20px;
+        }
+
+        #personal-info-form input {
+            margin-bottom: 10px;
+        }
+
+        /* Confidence score form */
+        #confidence-form {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        #confidence-form select {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- HTML structure for personal info form -->
+    <div class="container" id="personal-info-container">
+        <div id="personal-info-form">
+            <h2>Please provide your personal information:</h2>
+            <input type="text" id="name" name="name" placeholder="您的姓名/Your Name" required style="width: 400px; height: 40px; font-size: 18px;"><br>
+            <input type="text" id="title" name="title" placeholder="您的职称/Your Medical Title" required style="width: 400px; height: 40px; font-size: 18px;"><br>            
+            <input type="number" id="years" name="years" placeholder="眼科工作年限/Years of Experience in Ophthalmology" required style="width: 400px; height: 40px; font-size: 14px;"><br>
+            <input type="email" id="email" name="email" placeholder="您的邮箱/Your Email" required style="width: 400px; height: 40px; font-size: 18px;"><br>
+            <button onclick="startQuiz()">Start Quiz</button>
+            <h2>注意：后台无保存记录，刷新/退出则重新开始</h2>
+            <h2>请预留好一小时左右的完整时间(104题)</h2>
+            <h2>Attention: There are no saved records in the backend.  If you refresh or exit, the quiz will restart.</h2>
+            <h2>Please allocate approximately one hour of uninterrupted time for 104 questions.</h2>
+        </div>
+    </div>
+
+    <!-- HTML structure for quiz -->
+    <div class="container" id="quiz-container">
+        <!-- Image container -->
+        <div id="question-image-container">
+            <img id="question-image" src="" alt="Question Image" onclick="showOverlay()">
+        </div>
+
+        <!-- Question display -->
+        <div id="question-display">            
+
+            <div id="instruction">图片加载缓慢，请耐心等待 / Image loading slow, please be patient~</div>               
+            <div id="instruction">////////////////////////////////////////////////////////////////////////////////////////////////////////////////</div>
+            <div id="instruction">图片加载缓慢，请耐心等待 / Image loading slow, please be patient~</div>
+            <div id="instruction">单击图片查看细节 / Click on the image to view details</div>
+            <div id="instruction">请选择最可能的诊断后，点击下一题</div>
+            <div id="instruction">Please select the most likely diagnosis, and click on the next button</div>
+            <div id="question-number"></div>
+            <div id="options-container"></div>         
+        </div>
+
+        <!-- Button container -->
+        <div id="button-container">
+            <button id="prev-button" onclick="loadPrevQuestion()">Previous</button>
+            <button id="next-button" onclick="loadNextQuestion()" style="display: none;">Next</button>
+        </div>
+    </div>
+
+    <!-- Confidence score form -->
+    <div class="container" id="confidence-container">
+        <div id="confidence-form">
+            <h2>请为您答案选择信心分数</h2>
+            <h2>Please rate your confidence in your answers:</h2>
+            <select id="confidence">
+                <option value="1">1 - Very Low</option>
+                <option value="2">2 - Low</option>
+                <option value="3">3 - Moderate</option>
+                <option value="4">4 - High</option>
+                <option value="5">5 - Very High</option>
+            </select><br>
+            <button onclick="recordConfidence()">Submit</button>
+        </div>
+    </div>
+    
+    <!-- Result display -->
+    <div class="container" id="result-container">
+        <h2>答题完成~ / Quiz Completed!</h2>
+        <h2>请保存结果 / Please save the results</h2>
+        <h2>将结果发送至邮箱 / Send the results to email</h2>
+        <h2>lt@jsiec.org</h2>
+        <h2>感谢您的参与！ / Thank you and have a good day~</h2>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" onclick="hideOverlay()">
+        <img id="overlay-image" src="" alt="Overlay Image">
+    </div>
+
+    <!-- External JS libraries and your JavaScript code remain the same -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        // JavaScript code for the quiz
+
+        // Array to store user responses
+        const userResponses = [];
+
+        // Array to store question prompts 
+        const questionPrompts = [                        
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: BEST disease\nTop3: Multiple Evanescent White-Dot Syndromes\nTop4: Bietti Crystalline Dystrophy\nTop5: Geographic Atrophy ", 
+            "RetiZero Results: \nTop1: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop2: Serpiginous Choroidopathy\nTop3: Pathologic Myopia\nTop4: Geographic Atrophy\nTop5: Angioid Streaks ", 
+            "RetiZero Results: \nTop1: Angioid Streaks\nTop2: Morning Glory Anomaly\nTop3: Serpiginous Choroidopathy\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Retinal Arterial Macroaneurysm\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: Roth Spots ", 
+            "RetiZero Results: \nTop1: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop2: Serpiginous Choroidopathy\nTop3: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop4: Presumed Ocular Histoplasmosis Syndrome\nTop5: Angioid Streaks ", 
+            "RetiZero Results: \nTop1: Moderate Non-Proliferative Diabetic Retinopathy\nTop2: Severe Non-Proliferative Diabetic Retinopathy\nTop3: Proliferative Diabetic Retinopathy\nTop4: Hypertensive Retinopathy\nTop5: Punctate Inner Choroidopathy_Multifocal Choroiditis ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: BEST disease\nTop4: Moderate Non-Proliferative Diabetic Retinopathy\nTop5: Multiple Evanescent White-Dot Syndromes ", 
+            "RetiZero Results: \nTop1: Behcet disease\nTop2: Optic Disc Coloboma\nTop3: Syphilitic Uveitis\nTop4: Acute Retinal Necrosis\nTop5: Intraocular Foreign Body ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Angioid Streaks\nTop4: Roth Spots\nTop5: Normal ", 
+            "RetiZero Results: \nTop1: Chorioretinal Coloboma\nTop2: Optic Disc Coloboma\nTop3: Myelinated Nerve Fiber\nTop4: Intraocular Foreign Body\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Albinism\nTop3: Acute Retinal Necrosis\nTop4: Vogt-Koyanagi-Harada disease\nTop5: Serpiginous Choroidopathy ", 
+            "RetiZero Results: \nTop1: Retinitis Pigmentosa\nTop2: Syphilitic Uveitis\nTop3: Bietti Crystalline Dystrophy\nTop4: Acute Retinal Necrosis\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Valsalva Retinopathy\nTop2: Retinal Detachment\nTop3: Intraocular Foreign Body\nTop4: Choroidal Rupture\nTop5: Retinal Arterial Macroaneurysm ", 
+            "RetiZero Results: \nTop1: Vogt-Koyanagi-Harada disease\nTop2: Syphilitic Uveitis\nTop3: Acute Retinal Necrosis\nTop4: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop5: Geographic Atrophy ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Multiple Evanescent White-Dot Syndromes\nTop3: Angioid Streaks\nTop4: Normal\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Bietti Crystalline Dystrophy\nTop3: Leber Congenital Amaurosis\nTop4: Behcet disease\nTop5: Morning Glory Anomaly ", 
+            "RetiZero Results: \nTop1: Choroidal Rupture\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: Valsalva Retinopathy\nTop4: Neovascular Age-related Macular Degeneration\nTop5: Retinal Arterial Macroaneurysm ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Retinal Arterial Macroaneurysm\nTop3: Valsalva Retinopathy\nTop4: Leukemic Retinopathy\nTop5: Choroidal Rupture ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop3: Angioid Streaks\nTop4: Geographic Atrophy\nTop5: Syphilitic Uveitis ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Lipemia Retinalis\nTop3: Retinitis Pigmentosa\nTop4: Syphilitic Uveitis\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Acute Retinal Necrosis\nTop3: Behcet disease\nTop4: Retinal Detachment\nTop5: Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Leber Congenital Amaurosis\nTop2: Myelinated Nerve Fiber\nTop3: Retinoblastoma\nTop4: Commotio Retinae\nTop5: Epiretinal Membrane ", 
+            "RetiZero Results: \nTop1: Branch Retinal Vein Occlusion\nTop2: Severe Non-Proliferative Diabetic Retinopathy\nTop3: Central Retinal Vein Occlusion\nTop4: Leukemic Retinopathy\nTop5: Retinal Arterial Macroaneurysm ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: Acute Retinal Necrosis\nTop4: Glaucoma\nTop5: Behcet disease ", 
+            "RetiZero Results: \nTop1: Serpiginous Choroidopathy\nTop2: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop3: Presumed Ocular Histoplasmosis Syndrome\nTop4: Angioid Streaks\nTop5: Choroidal Rupture ", 
+            "RetiZero Results: \nTop1: Stargardt disease\nTop2: Geographic Atrophy\nTop3: Multiple Evanescent White-Dot Syndromes\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: Leber Congenital Amaurosis ", 
+            "RetiZero Results: \nTop1: Choroidal Rupture\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop4: Glaucoma\nTop5: Intraocular Foreign Body ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Glaucoma\nTop3: Moderate Non-Proliferative Diabetic Retinopathy\nTop4: Severe Non-Proliferative Diabetic Retinopathy\nTop5: Roth Spots ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Acute Retinal Necrosis\nTop4: Optic Disc Coloboma\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Proliferative Diabetic Retinopathy\nTop2: Acute Retinal Necrosis\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Purtscher Retinopathy\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Proliferative Diabetic Retinopathy\nTop2: Retinitis Pigmentosa\nTop3: Glaucoma\nTop4: Lipemia Retinalis\nTop5: Severe Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Retinal Arterial Macroaneurysm\nTop3: Valsalva Retinopathy\nTop4: Branch Retinal Vein Occlusion\nTop5: Leukemic Retinopathy ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Proliferative Diabetic Retinopathy\nTop3: Glaucoma\nTop4: Roth Spots\nTop5: Syphilitic Uveitis ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Acute Retinal Necrosis\nTop3: Behcet disease\nTop4: Valsalva Retinopathy\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Proliferative Diabetic Retinopathy\nTop2: Roth Spots\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Branch Retinal Vein Occlusion\nTop5: Leukemic Retinopathy ", 
+            "RetiZero Results: \nTop1: Choroidal Rupture\nTop2: Myelinated Nerve Fiber\nTop3: Glaucoma\nTop4: Syphilitic Uveitis\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Albinism\nTop2: Leber Congenital Amaurosis\nTop3: Angioid Streaks\nTop4: Vogt-Koyanagi-Harada disease\nTop5: Bietti Crystalline Dystrophy ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Neovascular Age-related Macular Degeneration\nTop3: Geographic Atrophy\nTop4: Serpiginous Choroidopathy\nTop5: Choroidal Rupture ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Leukemic Retinopathy\nTop3: Retinal Detachment\nTop4: Acute Retinal Necrosis\nTop5: Choroidal Rupture ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Choroidal Metastasis\nTop3: BEST disease\nTop4: Neovascular Age-related Macular Degeneration\nTop5: Geographic Atrophy ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Behcet disease\nTop3: Vogt-Koyanagi-Harada disease\nTop4: Moderate Non-Proliferative Diabetic Retinopathy\nTop5: Multiple Evanescent White-Dot Syndromes ", 
+            "RetiZero Results: \nTop1: Multiple Evanescent White-Dot Syndromes\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop4: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop5: BEST disease ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Glaucoma\nTop3: Bietti Crystalline Dystrophy\nTop4: Neovascular Age-related Macular Degeneration\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ",
+            "RetiZero Results: \nTop1: Bietti Crystalline Dystrophy\nTop2: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop3: Angioid Streaks\nTop4: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop5: Geographic Atrophy ", 
+            "RetiZero Results: \nTop1: Moderate Non-Proliferative Diabetic Retinopathy\nTop2: Multiple Evanescent White-Dot Syndromes\nTop3: Syphilitic Uveitis\nTop4: Retinitis Pigmentosa\nTop5: Bietti Crystalline Dystrophy ", 
+            "RetiZero Results: \nTop1: X-linked Retinoschisis\nTop2: Leber Congenital Amaurosis\nTop3: Choroidal Rupture\nTop4: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop5: Valsalva Retinopathy ", 
+            "RetiZero Results: \nTop1: Bietti Crystalline Dystrophy\nTop2: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop3: Angioid Streaks\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: Stargardt disease ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: BEST disease\nTop3: Glaucoma\nTop4: Valsalva Retinopathy\nTop5: Central Serous Chorioretinopathy ", 
+            "RetiZero Results: \nTop1: Lipemia Retinalis\nTop2: Bietti Crystalline Dystrophy\nTop3: Macular Hole\nTop4: Angioid Streaks\nTop5: Retinal Arterial Macroaneurysm ", 
+            "RetiZero Results: \nTop1: Purtscher Retinopathy\nTop2: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop3: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop4: Severe Non-Proliferative Diabetic Retinopathy\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Serpiginous Choroidopathy\nTop3: Choroidal Rupture\nTop4: Chorioretinal Coloboma\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Angioid Streaks\nTop3: Hypertensive Retinopathy\nTop4: Choroidal Rupture\nTop5: Acute Posterior Multifocal Placoid Pigment Epitheliopathy ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Optic Atrophy\nTop3: Lipemia Retinalis\nTop4: Pigmented Paravenous Retinochoroidal Atrophy\nTop5: Macular Hole ", 
+            "RetiZero Results: \nTop1: Morning Glory Anomaly\nTop2: Chorioretinal Coloboma\nTop3: Retinoblastoma\nTop4: BEST disease\nTop5: Optic Disc Coloboma ", 
+            "RetiZero Results: \nTop1: Angioid Streaks\nTop2: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop3: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop4: Bietti Crystalline Dystrophy\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Serpiginous Choroidopathy\nTop3: Angioid Streaks\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: Choroidal Rupture ", 
+            "RetiZero Results: \nTop1: Retinitis Pigmentosa\nTop2: Pigmented Paravenous Retinochoroidal Atrophy\nTop3: Bietti Crystalline Dystrophy\nTop4: Leber Congenital Amaurosis\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Roth Spots\nTop3: Proliferative Diabetic Retinopathy\nTop4: Behcet disease\nTop5: Leukemic Retinopathy ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Acute Retinal Necrosis\nTop3: Retinal Detachment\nTop4: Vogt-Koyanagi-Harada disease\nTop5: Macular Hole ", 
+            "RetiZero Results: \nTop1: Moderate Non-Proliferative Diabetic Retinopathy\nTop2: Glaucoma\nTop3: Lipemia Retinalis\nTop4: Syphilitic Uveitis\nTop5: Roth Spots ", 
+            "RetiZero Results: \nTop1: Proliferative Diabetic Retinopathy\nTop2: Severe Non-Proliferative Diabetic Retinopathy\nTop3: Behcet disease\nTop4: Syphilitic Uveitis\nTop5: Acute Retinal Necrosis ", 
+            "RetiZero Results: \nTop1: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop2: Glaucoma\nTop3: Bietti Crystalline Dystrophy\nTop4: Geographic Atrophy\nTop5: Polypoidal Choroidal Vasculopathy ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Multiple Evanescent White-Dot Syndromes\nTop3: Syphilitic Uveitis\nTop4: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop5: BEST disease ", 
+            "RetiZero Results: \nTop1: Behcet disease\nTop2: Syphilitic Uveitis\nTop3: Retinal Detachment\nTop4: Leber Congenital Amaurosis\nTop5: Chorioretinal Coloboma ", 
+            "RetiZero Results: \nTop1: Vogt-Koyanagi-Harada disease\nTop2: Syphilitic Uveitis\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Multiple Evanescent White-Dot Syndromes\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Retinitis Pigmentosa\nTop2: Glaucoma\nTop3: Retinal Detachment\nTop4: Syphilitic Uveitis\nTop5: Serpiginous Choroidopathy ", 
+            "RetiZero Results: \nTop1: BEST disease\nTop2: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop3: Multiple Evanescent White-Dot Syndromes\nTop4: Stargardt disease\nTop5: Central Serous Chorioretinopathy ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Stargardt disease\nTop3: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop4: Neovascular Age-related Macular Degeneration\nTop5: BEST disease ", 
+            "RetiZero Results: \nTop1: Central Retinal Vein Occlusion\nTop2: Severe Non-Proliferative Diabetic Retinopathy\nTop3: Branch Retinal Vein Occlusion\nTop4: Proliferative Diabetic Retinopathy\nTop5: Leukemic Retinopathy ", 
+            "RetiZero Results: \nTop1: Chorioretinal Coloboma\nTop2: Optic Disc Coloboma\nTop3: Retinoblastoma\nTop4: Morning Glory Anomaly\nTop5: Myelinated Nerve Fiber ", 
+            "RetiZero Results: \nTop1: Syphilitic Uveitis\nTop2: Vogt-Koyanagi-Harada disease\nTop3: Multiple Evanescent White-Dot Syndromes\nTop4: Severe Non-Proliferative Diabetic Retinopathy\nTop5: Behcet disease ", 
+            "RetiZero Results: \nTop1: Myelinated Nerve Fiber\nTop2: Optic Disc Coloboma\nTop3: Chorioretinal Coloboma\nTop4: Leber Congenital Amaurosis\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Behcet disease\nTop2: Roth Spots\nTop3: Lipemia Retinalis\nTop4: Optic Atrophy\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Angioid Streaks\nTop3: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop4: Neovascular Age-related Macular Degeneration\nTop5: Serpiginous Choroidopathy ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Proliferative Diabetic Retinopathy\nTop3: Asteroid Hyalosis\nTop4: Hypertensive Retinopathy\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Retinal Detachment\nTop2: Myelinated Nerve Fiber\nTop3: Optic Disc Coloboma\nTop4: Retinoblastoma\nTop5: Valsalva Retinopathy ", 
+            "RetiZero Results: \nTop1: Behcet disease\nTop2: Intraocular Foreign Body\nTop3: Syphilitic Uveitis\nTop4: Acute Retinal Necrosis\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop2: Polypoidal Choroidal Vasculopathy\nTop3: Multiple Evanescent White-Dot Syndromes\nTop4: Moderate Non-Proliferative Diabetic Retinopathy\nTop5: Geographic Atrophy ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Glaucoma\nTop3: Myelinated Nerve Fiber\nTop4: Commotio Retinae\nTop5: Angioid Streaks ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Commotio Retinae\nTop3: BEST disease\nTop4: Syphilitic Uveitis\nTop5: Glaucoma ", 
+            "RetiZero Results: \nTop1: Intraocular Foreign Body\nTop2: Chorioretinal Coloboma\nTop3: Optic Disc Coloboma\nTop4: Morning Glory Anomaly\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Neovascular Age-related Macular Degeneration\nTop2: Geographic Atrophy\nTop3: Retinitis Pigmentosa\nTop4: Leber Congenital Amaurosis\nTop5: Behcet disease ", 
+            "RetiZero Results: \nTop1: Asteroid Hyalosis\nTop2: Leber Congenital Amaurosis\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Proliferative Diabetic Retinopathy\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Stargardt disease\nTop3: Glaucoma\nTop4: Geographic Atrophy\nTop5: Punctate Inner Choroidopathy_Multifocal Choroiditis ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Severe Non-Proliferative Diabetic Retinopathy\nTop3: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop4: Multiple Evanescent White-Dot Syndromes\nTop5: Syphilitic Uveitis ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Multiple Evanescent White-Dot Syndromes\nTop3: Polypoidal Choroidal Vasculopathy\nTop4: Macular Hole\nTop5: Moderate Non-Proliferative Diabetic Retinopathy ", 
+            "RetiZero Results: \nTop1: Optic Disc Coloboma\nTop2: Proliferative Diabetic Retinopathy\nTop3: Retinal Detachment\nTop4: Morning Glory Anomaly\nTop5: Purtscher Retinopathy ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Proliferative Diabetic Retinopathy\nTop3: Leukemic Retinopathy\nTop4: Retinal Arterial Macroaneurysm\nTop5: Hypertensive Retinopathy ", 
+            "RetiZero Results: \nTop1: Acute Retinal Necrosis\nTop2: Proliferative Diabetic Retinopathy\nTop3: Central Retinal Vein Occlusion\nTop4: Leukemic Retinopathy\nTop5: Behcet disease ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Lipemia Retinalis\nTop3: Behcet disease\nTop4: Optic Atrophy\nTop5: Stargardt disease ", 
+            "RetiZero Results: \nTop1: Glaucoma\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Roth Spots\nTop4: Epiretinal Membrane\nTop5: Polypoidal Choroidal Vasculopathy ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Syphilitic Uveitis\nTop3: Commotio Retinae\nTop4: Behcet disease\nTop5: Polypoidal Choroidal Vasculopathy ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Branch Retinal Vein Occlusion\nTop4: Roth Spots\nTop5: Retinal Arterial Macroaneurysm ", 
+            "RetiZero Results: \nTop1: Acute Retinal Necrosis\nTop2: Asteroid Hyalosis\nTop3: Proliferative Diabetic Retinopathy\nTop4: Retinal Detachment\nTop5: Purtscher Retinopathy ", 
+            "RetiZero Results: \nTop1: Retinitis Pigmentosa\nTop2: Pigmented Paravenous Retinochoroidal Atrophy\nTop3: Leber Congenital Amaurosis\nTop4: Vogt-Koyanagi-Harada disease\nTop5: Chorioretinal Coloboma ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Branch Retinal Vein Occlusion\nTop3: Proliferative Diabetic Retinopathy\nTop4: Central Retinal Vein Occlusion\nTop5: Leukemic Retinopathy ", 
+            "RetiZero Results: \nTop1: Retinitis Pigmentosa\nTop2: Serpiginous Choroidopathy\nTop3: Pigmented Paravenous Retinochoroidal Atrophy\nTop4: Bietti Crystalline Dystrophy\nTop5: Retinal Detachment ", 
+            "RetiZero Results: \nTop1: Purtscher Retinopathy\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Choroidal Rupture\nTop4: Asteroid Hyalosis\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Branch Retinal Vein Occlusion\nTop2: Roth Spots\nTop3: Severe Non-Proliferative Diabetic Retinopathy\nTop4: Retinal Arterial Macroaneurysm\nTop5: Polypoidal Choroidal Vasculopathy ", 
+            "RetiZero Results: \nTop1: Geographic Atrophy\nTop2: Pathologic Myopia\nTop3: Angioid Streaks\nTop4: Bietti Crystalline Dystrophy\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Acute Posterior Multifocal Placoid Pigment Epitheliopathy\nTop2: Bietti Crystalline Dystrophy\nTop3: Serpiginous Choroidopathy\nTop4: Angioid Streaks\nTop5: Punctate Inner Choroidopathy_Multifocal Choroiditis ", 
+            "RetiZero Results: \nTop1: X-linked Retinoschisis\nTop2: Leber Congenital Amaurosis\nTop3: Choroidal Rupture\nTop4: Lipemia Retinalis\nTop5: Vogt-Koyanagi-Harada disease ", 
+            "RetiZero Results: \nTop1: Severe Non-Proliferative Diabetic Retinopathy\nTop2: Angioid Streaks\nTop3: Retinal Racemose Hemangioma\nTop4: Hypertensive Retinopathy\nTop5: Purtscher Retinopathy ", 
+            "RetiZero Results: \nTop1: Polypoidal Choroidal Vasculopathy\nTop2: Moderate Non-Proliferative Diabetic Retinopathy\nTop3: Punctate Inner Choroidopathy_Multifocal Choroiditis\nTop4: Geographic Atrophy\nTop5: BEST disease"
+            // Add more question prompts as needed 
+        ];
+
+        // Array to store the paths of all images
+        const imagePaths = [
+            "RetiZero2.0/88.jpg ", 
+            "RetiZero2.0/23.jpg ", 
+            "RetiZero2.0/76.jpg ", 
+            "RetiZero2.0/71.jpg ", 
+            "RetiZero2.0/35.png ", 
+            "RetiZero2.0/31.jpg ", 
+            "RetiZero2.0/3.jpg ", 
+            "RetiZero2.0/67.png ", 
+            "RetiZero2.0/12.png ", 
+            "RetiZero2.0/39.png ", 
+            "RetiZero2.0/75.jpg ", 
+            "RetiZero2.0/27.jpg ", 
+            "RetiZero2.0/16.png ", 
+            "RetiZero2.0/8.png ", 
+            "RetiZero2.0/56.jpg ", 
+            "RetiZero2.0/50.jpg ", 
+            "RetiZero2.0/9.png ", 
+            "RetiZero2.0/69.jpg ", 
+            "RetiZero2.0/86.jpg ", 
+            "RetiZero2.0/37.jpg ", 
+            "RetiZero2.0/92.jpg ", 
+            "RetiZero2.0/17.jpg ", 
+            "RetiZero2.0/26.jpg ", 
+            "RetiZero2.0/6.jpg ", 
+            "RetiZero2.0/77.jpg ", 
+            "RetiZero2.0/20.jpg ", 
+            "RetiZero2.0/52.png ", 
+            "RetiZero2.0/74.jpg ", 
+            "RetiZero2.0/81.png ", 
+            "RetiZero2.0/63.jpg ", 
+            "RetiZero2.0/58.jpg ", 
+            "RetiZero2.0/51.jpg ", 
+            "RetiZero2.0/30.jpg ", 
+            "RetiZero2.0/55.jpg ", 
+            "RetiZero2.0/42.jpg ", 
+            "RetiZero2.0/40.png ", 
+            "RetiZero2.0/1.jpg ", 
+            "RetiZero2.0/98.png ", 
+            "RetiZero2.0/103.jpg ", 
+            "RetiZero2.0/41.jpg ", 
+            "RetiZero2.0/7.jpg ", 
+            "RetiZero2.0/101.jpg ", 
+            "RetiZero2.0/24.png ", 
+            "RetiZero2.0/61.jpg ", 
+            "RetiZero2.0/85.jpg ", 
+            "RetiZero2.0/38.jpg ", 
+            "RetiZero2.0/15.png ", 
+            "RetiZero2.0/104.jpg ", 
+            "RetiZero2.0/14.jpg ", 
+            "RetiZero2.0/64.jpg ", 
+            "RetiZero2.0/2.png ", 
+            "RetiZero2.0/11.jpg ", 
+            "RetiZero2.0/84.jpg ", 
+            "RetiZero2.0/102.jpg ", 
+            "RetiZero2.0/10.png ", 
+            "RetiZero2.0/5.png ", 
+            "RetiZero2.0/94.jpg ", 
+            "RetiZero2.0/91.jpg ", 
+            "RetiZero2.0/66.jpg ", 
+            "RetiZero2.0/83.png ", 
+            "RetiZero2.0/93.jpg ", 
+            "RetiZero2.0/47.jpg ", 
+            "RetiZero2.0/78.jpg ", 
+            "RetiZero2.0/72.jpg ", 
+            "RetiZero2.0/82.jpg ", 
+            "RetiZero2.0/36.jpg ", 
+            "RetiZero2.0/43.jpg ", 
+            "RetiZero2.0/90.png ", 
+            "RetiZero2.0/45.jpg ", 
+            "RetiZero2.0/22.jpg ", 
+            "RetiZero2.0/62.jpg ", 
+            "RetiZero2.0/99.png ", 
+            "RetiZero2.0/70.jpg ", 
+            "RetiZero2.0/96.png ", 
+            "RetiZero2.0/25.jpg ", 
+            "RetiZero2.0/28.png ", 
+            "RetiZero2.0/89.jpg ", 
+            "RetiZero2.0/32.jpg ", 
+            "RetiZero2.0/21.jpg ", 
+            "RetiZero2.0/57.png ", 
+            "RetiZero2.0/19.jpg ", 
+            "RetiZero2.0/13.jpg ", 
+            "RetiZero2.0/53.jpg ", 
+            "RetiZero2.0/87.png ", 
+            "RetiZero2.0/73.jpg ", 
+            "RetiZero2.0/18.jpg ", 
+            "RetiZero2.0/80.jpg ", 
+            "RetiZero2.0/97.jpg ", 
+            "RetiZero2.0/46.jpg ", 
+            "RetiZero2.0/4.jpg ", 
+            "RetiZero2.0/44.jpg ", 
+            "RetiZero2.0/65.jpg ", 
+            "RetiZero2.0/33.jpg ", 
+            "RetiZero2.0/60.png ", 
+            "RetiZero2.0/59.png ", 
+            "RetiZero2.0/34.jpg ", 
+            "RetiZero2.0/48.jpg ", 
+            "RetiZero2.0/68.png ", 
+            "RetiZero2.0/100.jpg ", 
+            "RetiZero2.0/54.png ", 
+            "RetiZero2.0/29.png ", 
+            "RetiZero2.0/79.jpg ", 
+            "RetiZero2.0/95.jpg ", 
+            "RetiZero2.0/49.jpg "
+            // Add more image paths as needed
+        ];
+
+        // Array of fixed options for all questions
+        const options = [
+            "0.Acute Posterior Multifocal Placoid Pigment Epitheliopathy \n急性后部多灶性鳞状色素上皮病变",
+            "1.Acute Retinal Necrosis \n急性视网膜坏死",
+            "2.Albinism \n白化病眼底",
+            "3.Angioid Streaks \n血管样条纹征",
+            "4.Asteroid Hyalosis \n星状玻璃体变性",
+            "5.Behcet disease \n白塞氏病",
+            "6.BEST disease \nBEST病",
+            "7.Bietti Crystalline Dystrophy \nBietti结晶性营养不良",
+            "8.Branch Retinal Vein Occlusion \n视网膜分支静脉阻塞",
+            "9.Central Retinal Vein Occlusion \n视网膜中央静脉阻塞",
+            "10.Central Serous Chorioretinopathy \n中心性浆液性脉络膜视网膜病变",
+            "11.Chorioretinal Coloboma \n脉络膜视网膜缺损",
+            "12.Choroidal Metastasis \n脉络膜转移癌",
+            "13.Choroidal Rupture \n脉络膜破裂",
+            "14.Commotio Retinae \n视网膜震荡",
+            "15.Moderate Non-Proliferative Diabetic Retinopathy \n中度非增殖期糖尿病视网膜病变",
+            "16.Severe Non-Proliferative Diabetic Retinopathy \n重度非增殖期糖尿病视网膜病变",
+            "17.Proliferative Diabetic Retinopathy \n增殖期糖尿病视网膜病变",
+            "18.Epiretinal Membrane \n黄斑前膜",
+            "19.Geographic Atrophy \n地图样萎缩",
+            "20.Glaucoma \n青光眼",
+            "21.Hypertensive Retinopathy \n高血压性视网膜病变",
+            "22.Intraocular Foreign Body \n眼内异物",
+            "23.Leber Congenital Amaurosis \nLeber先天性黑曚",
+            "24.Leukemic Retinopathy \n白血病性视网膜病变",
+            "25.Lipemia Retinalis \n视网膜脂血症",
+            "26.Macular Hole \n黄斑裂孔",
+            "27.Morning Glory Anomaly \n牵牛花综合征",
+            "28.Multiple Evanescent White-Dot Syndromes \n多发性一过性白点综合征",
+            "29.Myelinated Nerve Fiber \n有髓神经纤维",
+            "30.Neovascular Age-related Macular Degeneration \n新生血管性年龄相关性黄斑变性",
+            "31.Normal \n正常眼底",
+            "32.Optic Atrophy \n视盘萎缩",
+            "33.Optic Disc Coloboma \n视盘缺损",
+            "34.Pathologic Myopia \n病理性近视",
+            "35.Pigmented Paravenous Retinochoroidal Atrophy \n色素性静脉旁视网膜脉络膜萎缩",
+            "36.Polypoidal Choroidal Vasculopathy \n息肉状脉络膜血管病变",
+            "37.Presumed Ocular Histoplasmosis Syndrome \n眼组织胞浆菌病综合征",
+            "38.Punctate Inner Choroidopathy_Multifocal Choroiditis \n点状内层脉络膜病变_多灶性脉络膜炎",
+            "39.Purtscher Retinopathy \nPurtscher视网膜病变",
+            "40.Retinal Arterial Macroaneurysm \n视网膜大动脉瘤",
+            "41.Retinal Detachment \n视网膜脱离",
+            "42.Retinal Racemose Hemangioma \n视网膜蔓状血管瘤",
+            "43.Retinitis Pigmentosa \n视网膜色素变性",
+            "44.Retinoblastoma \n视网膜母细胞瘤",
+            "45.Roth Spots \nRoth斑",
+            "46.Serpiginous Choroidopathy \n匐行性脉络膜病变",
+            "47.Stargardt disease \nStargardt 病",
+            "48.Syphilitic Uveitis \n梅毒性葡萄膜炎",
+            "49.Valsalva Retinopathy \nValsalva 视网膜病变",
+            "50.Vogt-Koyanagi-Harada disease \nVKH病",
+            "51.X-linked Retinoschisis \nX连锁视网膜劈裂",  
+            // Options list
+        ];
+
+        // Variable to keep track of current question index
+        let currentQuestionIndex = 0;
+
+        // Variable to store start time of the quiz
+        let quizStartTime;
+        let selectedOptions = []; // Array to store user's selected options
+        let questionStartTimes = []; // Array to store start times of each question
+        let confidenceScores = []; // Array to store user's confidence scores
+
+
+        // Function to load the next question
+        function loadNextQuestion() {
+            if (currentQuestionIndex < imagePaths.length) {
+                // Hide the 'Next' button
+                document.getElementById("next-button").style.display = "none";
+                const questionNumber = document.getElementById("question-number");
+                questionNumber.innerText = `No. ${currentQuestionIndex + 1} /104 `;
+
+
+                // load images
+                const imagePath = imagePaths[currentQuestionIndex];
+                const questionImage = document.getElementById("question-image");
+                questionImage.src = imagePath;
+
+                // Update instruction with question prompt
+                const instruction = document.getElementById("instruction");
+                instruction.innerText = questionPrompts[currentQuestionIndex]; 
+
+                // Record start time of the question
+                questionStartTimes[currentQuestionIndex] = new Date();
+
+                // Clear previous options
+                const optionsContainer = document.getElementById("options-container");
+                optionsContainer.innerHTML = "";
+
+                // Add options dynamically
+                options.forEach((option, index) => {
+                    const optionElement = document.createElement("div");
+                    optionElement.classList.add("option");
+                    optionElement.innerText = option;
+                    optionElement.addEventListener("click", () => handleOptionClick(index));
+                    optionsContainer.appendChild(optionElement);
+                });
+
+                // Highlight the selected option, if any
+                if (selectedOptions[currentQuestionIndex] !== undefined) {
+                    const selectedOptionIndex = selectedOptions[currentQuestionIndex];
+                    document.getElementsByClassName("option")[selectedOptionIndex].classList.add("selected");
+                }
+
+                // Increment question index
+                currentQuestionIndex++;
+
+                // Start the timer if it's the first question
+                if (currentQuestionIndex === 1) {
+                    quizStartTime = new Date();
+                }
+            } else {
+                // Hide question display and image container
+                document.getElementById("question-display").style.display = "none";
+                document.getElementById("question-image-container").style.display = "none";
+
+                // Show confidence score form
+                document.getElementById("confidence-form").style.display = "block";
+            }
+        }
+
+        function loadPrevQuestion() {
+            if (currentQuestionIndex > 1) {
+                // Decrement question index
+                currentQuestionIndex--;
+
+                // Load the previous question
+                const questionNumber = document.getElementById("question-number");
+                questionNumber.innerText = `No. ${currentQuestionIndex} /104 `;
+
+                const imagePath = imagePaths[currentQuestionIndex - 1];
+                const questionImage = document.getElementById("question-image");
+                questionImage.src = imagePath;
+
+                // Clear previous options
+                const optionsContainer = document.getElementById("options-container");
+                optionsContainer.innerHTML = "";
+
+                // Add options dynamically
+                options.forEach((option, index) => {
+                    const optionElement = document.createElement("div");
+                    optionElement.classList.add("option");
+                    optionElement.innerText = option;
+                    optionElement.addEventListener("click", () => handleOptionClick(index));
+                    optionsContainer.appendChild(optionElement);
+                });
+
+                // Highlight the selected option, if any
+                if (selectedOptions[currentQuestionIndex - 1] !== undefined) {
+                    const selectedOptionIndex = selectedOptions[currentQuestionIndex - 1];
+                    document.getElementsByClassName("option")[selectedOptionIndex].classList.add("selected");
+                }
+            }
+        }
+
+        // Function to handle option click
+        function handleOptionClick(selectedOptionIndex) {
+            selectedOptions[currentQuestionIndex - 1] = selectedOptionIndex;
+
+            // Remove 'selected' class from all options
+            const options = document.getElementsByClassName("option");
+            for (let i = 0; i < options.length; i++) {
+                options[i].classList.remove("selected");
+            }
+
+            // Add 'selected' class to the clicked option
+            options[selectedOptionIndex].classList.add("selected");
+
+            // Show the 'Next' button
+            document.getElementById("next-button").style.display = "block";
+        }
+
+
+        // Function to show the overlay with a larger image
+        function showOverlay() {
+            const overlay = document.getElementById("overlay");
+            const overlayImage = document.getElementById("overlay-image");
+            const questionImage = document.getElementById("question-image");
+            overlayImage.src = questionImage.src;
+            overlay.style.display = "flex";
+        }
+
+        // Function to hide the overlay
+        function hideOverlay() {
+            const overlay = document.getElementById("overlay");
+            overlay.style.display = "none";
+        }
+
+        // Function to record confidence score and proceed to next step
+        function recordConfidence() {
+            const confidenceSelect = document.getElementById("confidence");
+            const selectedConfidence = confidenceSelect.value;
+            confidenceScores.push(selectedConfidence);
+            document.getElementById("confidence-form").style.display = "none";
+            submitPersonalInfo();
+        }
+
+        // Function to submit personal info
+        function submitPersonalInfo() {
+            const name = document.getElementById("name").value;
+            const title = document.getElementById("title").value;
+            const email = document.getElementById("email").value;
+            const years = document.getElementById("years").value;
+
+            if (name && title && email && years) {
+                // Calculate time taken for each question
+                const questionTimes = questionStartTimes.map((startTime, index) => {
+                    const endTime = index < questionStartTimes.length - 1 ? questionStartTimes[index + 1] : new Date();
+                    return (endTime - startTime) / 1000; // Convert to seconds
+                });
+
+                // Save user responses along with personal info, question times, and confidence scores
+                const responsesWithInfo = selectedOptions.map((optionIndex, questionIndex) => ({
+                    question: questionIndex + 1,
+                    selectedOption: optionIndex,
+                    timeTaken: questionTimes[questionIndex],
+                    name: name,
+                    title: title,
+                    email: email,
+                    years: years,
+                    confidence: confidenceScores[questionIndex]
+                }));
+
+                // Convert responses to worksheet and save as Excel file
+                const worksheet = XLSX.utils.json_to_sheet(responsesWithInfo);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Quiz Results");
+
+                const fileName = "Quiz_Results.xlsx";
+                XLSX.writeFile(workbook, fileName);
+
+                // Hide quiz container and confidence form, show result container
+                document.getElementById("quiz-container").style.display = "none";
+                document.getElementById("confidence-container").style.display = "none";
+                document.getElementById("result-container").style.display = "block";
+            } else {
+                alert("请完整填写表单 / Please fill out the form completely.");
+            }
+        }
+
+        // Function to start the quiz
+        function startQuiz() {
+            // Hide personal info form
+            document.getElementById("personal-info-container").style.display = "none";
+
+            // Display the quiz container
+            document.getElementById("quiz-container").style.display = "block";
+
+            // Load the first question
+            loadNextQuestion();
+        }
+
+        // Load the first question on page load
+        window.onload = function () {
+            // Hide quiz container and result container initially
+            document.getElementById("quiz-container").style.display = "none";
+            document.getElementById("result-container").style.display = "none";
+        };
+    </script>
+</body>
+</html>
